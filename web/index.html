@@ -1,45 +1,73 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f5f6f2">
-    <title>Inspeção industrial | Painel de testes</title>
+    <meta name="theme-color" content="#080a08">
+    <title>Inspeção industrial | Quality Lab</title>
+    <script>
+      try {
+        const savedTheme = localStorage.getItem('qualitylab-theme');
+        if (savedTheme === 'light' || savedTheme === 'dark') document.documentElement.dataset.theme = savedTheme;
+      } catch {}
+    </script>
     <link rel="stylesheet" href="/assets/styles.css">
     <script src="/assets/app.js" defer></script>
   </head>
   <body>
     <header class="topbar">
-      <a class="brand" href="/" aria-label="Painel de inspeção industrial">
-        <span class="brand-mark" aria-hidden="true">◎</span>
-        <span>oficina<span class="brand-light">.lab</span></span>
+      <a class="brand" href="/" aria-label="Quality Lab, início">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+        <span class="brand-name">QUALITY<span>LAB</span><small>WELDING INTELLIGENCE</small></span>
       </a>
-      <div class="connection"><span class="status-dot" id="health-dot"></span><span id="health-text">Verificando API…</span></div>
+      <div class="header-actions">
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar tema claro" title="Ativar tema claro"><span class="theme-icon" aria-hidden="true">☼</span><span class="theme-label">Tema claro</span></button>
+        <a class="docs-link" href="/docs" target="_blank" rel="noreferrer">Documentação <span aria-hidden="true">↗</span></a>
+        <div class="connection" role="status" aria-live="polite"><span class="status-dot" id="health-dot"></span><span id="health-text">Verificando API…</span></div>
+      </div>
     </header>
 
     <main class="shell">
-      <section class="intro">
-        <p class="eyebrow">AMBIENTE DE DESENVOLVIMENTO <span>•</span> VERSÃO DE TESTE</p>
-        <h1>Inspeção de processo</h1>
-        <p class="intro-copy">Envie medições para a API e acompanhe a recomendação do modelo. Cada resultado precisa de revisão humana.</p>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow"><span class="eyebrow-mark"></span> QUALITY CONTROL <span class="eyebrow-divider">/</span> LAB 01</p>
+          <h1>Inspecione cada detalhe<span class="title-period">.</span></h1>
+          <p class="intro-copy">Teste os modelos de processo e a análise visual da solda em um só lugar. Resultados consultivos, sempre com revisão humana.</p>
+          <div class="hero-tags"><span><i></i> Ambiente de testes</span><span>Sem controle da máquina</span></div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="visual-top"><span>WELD / ANALYSIS</span><span class="visual-live"><i></i> LOCAL</span></div>
+          <div class="scan-field">
+            <div class="scan-grid"></div>
+            <div class="scan-ring ring-one"></div>
+            <div class="scan-ring ring-two"></div>
+            <div class="scan-crosshair"><span></span><span></span></div>
+            <div class="scan-beam"></div>
+            <span class="scan-coordinate coordinate-a">X 042.8</span>
+            <span class="scan-coordinate coordinate-b">Y 018.3</span>
+            <span class="scan-target">◎</span>
+          </div>
+          <div class="visual-bottom"><span>MODEL SYSTEM <strong>READY FOR INPUT</strong></span><span>01 — 02</span></div>
+        </div>
       </section>
 
-      <nav class="tabs" aria-label="Tipo de teste">
-        <button class="tab is-active" type="button" data-panel="tabular-panel" aria-selected="true">Medições do processo</button>
-        <button class="tab" type="button" data-panel="image-panel" aria-selected="false">Inspeção de imagem</button>
+      <nav class="tabs" role="tablist" aria-label="Tipo de teste">
+        <button class="tab is-active" id="tabular-tab" type="button" role="tab" data-panel="tabular-panel" aria-controls="tabular-panel" aria-selected="true"><span class="tab-index">01</span><span>Medições do processo</span><span class="tab-arrow" aria-hidden="true">↗</span></button>
+        <button class="tab" id="image-tab" type="button" role="tab" data-panel="image-panel" aria-controls="image-panel" aria-selected="false" tabindex="-1"><span class="tab-index">02</span><span>Inspeção visual</span><span class="tab-arrow" aria-hidden="true">↗</span></button>
       </nav>
 
-      <section class="panel is-visible" id="tabular-panel">
+      <section class="panel is-visible" id="tabular-panel" role="tabpanel" aria-labelledby="tabular-tab">
         <div class="panel-heading">
-          <div><p class="eyebrow">INFERÊNCIA TABULAR</p><h2>Dados da soldagem</h2></div>
-          <span class="tag">8 variáveis</span>
+          <div class="heading-main"><p class="eyebrow">INFERÊNCIA TABULAR</p><h2>Parâmetros de soldagem</h2><p class="panel-subtitle">Informe as condições do processo para receber uma recomendação do modelo.</p></div>
+          <span class="tag"><span class="tag-dot"></span> 8 variáveis</span>
         </div>
+        <div class="panel-tools"><span>Sem dados em mãos? Comece com o exemplo.</span><button class="button button-secondary" id="load-sample" type="button"><span aria-hidden="true">↺</span> Restaurar exemplo</button></div>
         <form id="inference-form">
           <div class="meta-fields">
-            <label class="field"><span>ID do lote</span><input name="lote_id" value="LOTE_TESTE_001" required maxlength="80"></label>
-            <label class="field"><span>Data e hora</span><input name="timestamp" id="timestamp" type="datetime-local" required></label>
+            <label class="field"><span>ID DO LOTE</span><input name="lote_id" value="LOTE_TESTE_001" required maxlength="80" placeholder="Ex.: LOTE_0150"></label>
+            <label class="field"><span>DATA E HORA DA LEITURA</span><input name="timestamp" id="timestamp" type="datetime-local" required></label>
           </div>
-          <div class="section-label"><span>Parâmetros de processo</span><span>Informe valores numéricos</span></div>
+          <div class="section-label"><span><i class="section-marker"></i> Sinais de processo</span><span>Unidades indicadas em cada campo</span></div>
           <div class="field-grid">
             <label class="field"><span>Temperatura da solda</span><span class="input-unit"><input name="temperatura_solda_c" type="number" step="any" value="216.8" required><i>°C</i></span></label>
             <label class="field"><span>Corrente da solda</span><span class="input-unit"><input name="corrente_solda_a" type="number" step="any" value="160.2" required><i>A</i></span></label>
@@ -50,21 +78,35 @@
             <label class="field"><span>Área de porosidade</span><span class="input-unit"><input name="area_porosidade_px" type="number" step="any" value="7.6" required><i>px</i></span></label>
             <label class="field"><span>Temperatura máxima HAZ</span><span class="input-unit"><input name="temperatura_max_haz_c" type="number" step="any" value="227.7" required><i>°C</i></span></label>
           </div>
-          <div class="form-footer"><p>Resultado demonstrativo. Não controla equipamentos.</p><button class="button button-primary" type="submit"><span>Enviar para análise</span><span aria-hidden="true">↗</span></button></div>
+          <div class="form-footer"><p><span class="footer-lock">◇</span> Resultado demonstrativo. Não controla equipamentos.</p><button class="button button-primary" type="submit"><span>Executar análise</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
         </form>
         <div class="result" id="inference-result" aria-live="polite" hidden></div>
       </section>
 
-      <section class="panel" id="image-panel" hidden>
-        <div class="panel-heading"><div><p class="eyebrow">ANÁLISE EXPLORATÓRIA</p><h2>Porosidade e marcas visuais de calor</h2></div><span class="tag">Até 10 MB</span></div>
-        <p class="panel-copy">Envie uma foto da solda. O sistema marca cavidades escuras arredondadas como candidatos a porosidade e destaca tons dourados, alaranjados ou azulados. Em foto comum, isso não mede temperatura em °C nem confirma a zona HAZ; para isso é necessária uma câmera térmica radiométrica.</p>
+      <section class="panel is-image-panel" id="image-panel" role="tabpanel" aria-labelledby="image-tab" hidden>
+        <div class="panel-heading">
+          <div class="heading-main"><p class="eyebrow">VISÃO COMPUTACIONAL · EXPLORATÓRIA</p><h2>Inspecione uma imagem</h2><p class="panel-subtitle">A análise destaca candidatos visuais; confirme o resultado com uma pessoa.</p></div>
+          <span class="tag"><span class="tag-dot"></span> JPG · PNG · 10 MB</span>
+        </div>
+        <div class="analysis-notice"><span class="notice-icon">i</span><p>Fotos comuns permitem encontrar candidatos a porosidade e tons associados a calor. A imagem RGB não mede temperatura em °C nem confirma a zona HAZ.</p></div>
         <form id="image-form">
-          <label class="upload-zone" for="image-file"><span class="upload-icon">↑</span><strong id="file-label">Escolha uma imagem</strong><span>PNG, JPG ou outro formato de imagem</span><input id="image-file" name="file" type="file" accept="image/*" required></label>
-          <button class="button button-primary" type="submit"><span>Analisar foto</span><span aria-hidden="true">↗</span></button>
+          <label class="upload-zone" id="upload-zone" for="image-file" tabindex="0" aria-describedby="upload-help">
+            <span class="upload-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 15v4h14v-4"/></svg></span>
+            <strong id="file-label">Arraste sua foto para cá</strong>
+            <span id="upload-help">ou clique para procurar no computador</span>
+            <input id="image-file" name="file" type="file" accept="image/*" required>
+          </label>
+          <div class="image-preview" id="image-preview" hidden>
+            <img id="preview-image" alt="Prévia da foto escolhida">
+            <div class="preview-info"><strong id="preview-name"></strong><span id="preview-details"></span></div>
+            <button class="button button-secondary" id="clear-image" type="button">Remover</button>
+          </div>
+          <div class="form-footer image-form-footer"><p><span class="footer-lock">◇</span> Arquivo enviado somente à API local.</p><button class="button button-primary" type="submit"><span>Analisar imagem</span><span class="button-arrow" aria-hidden="true">↗</span></button></div>
         </form>
         <div class="result" id="image-result" aria-live="polite" hidden></div>
       </section>
-      <footer><span>Protótipo local para validação de integração</span><a href="/docs" target="_blank" rel="noreferrer">Documentação da API ↗</a></footer>
+
+      <footer class="page-footer"><span><i></i> QUALITY LAB <span class="footer-separator">/</span> PROTÓTIPO LOCAL</span><a href="/docs" target="_blank" rel="noreferrer">API DOCUMENTATION ↗</a></footer>
     </main>
   </body>
 </html>
