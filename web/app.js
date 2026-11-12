@@ -44,8 +44,9 @@ async function checkHealth() {
 
 function setBusy(button, busy, label) {
   button.disabled = busy;
-  button.dataset.label ||= button.textContent;
-  button.firstChild.textContent = busy ? label : button.dataset.label;
+  const text = button.querySelector('span:first-child');
+  button.dataset.label ||= text.textContent;
+  text.textContent = busy ? label : button.dataset.label;
 }
 
 function showError(element, error) {
@@ -120,14 +121,16 @@ imageForm.addEventListener('submit', async (event) => {
   try {
     const response = await request('/api/visao', { method: 'POST', body: new FormData(imageForm) });
     const summary = response.resumo;
-    imageResult.innerHTML = `<p class="result-title">Visualização exploratória pronta</p><div class="result-grid">
-      <span>Imagem</span><strong>${escapeHtml(response.nome_arquivo)}</strong>
-      <span>Dimensões</span><strong>${summary.largura} × ${summary.altura}</strong>
-      <span>Brilho médio</span><strong>${summary.brilho_medio}</strong>
-      <span>Contraste</span><strong>${summary.contraste}</strong>
-      <span>Regiões candidatas</span><strong>${summary.regioes_candidatas_heuristicas}</strong></div>
-      <img alt="Imagem com regiões candidatas destacadas" src="data:image/png;base64,${response.overlay_base64}">
-      <p>${escapeHtml(summary.resultado)}</p>`;
+    const porosity = response.porosidade;
+    const heat = response.termica_visual;
+    imageResult.innerHTML = `<p class="result-title">Análise visual concluída · ${escapeHtml(response.nome_arquivo)}</p>
+      <div class="result-grid"><span>Dimensões</span><strong>${summary.largura} × ${summary.altura} px</strong>
+      <span>Candidatos visuais a porosidade</span><strong>${porosity.candidatos_visuais}</strong>
+      <span>Regiões em tons dourados/alaranjados/azulados</span><strong>${heat.regioes_coloridas}</strong>
+      <span>Área da foto nesses tons</span><strong>${heat.area_colorida_pct}%</strong></div>
+      <div class="result-visuals"><figure><img alt="Candidatos a porosidade marcados em vermelho" src="data:image/png;base64,${response.overlay_porosidade_base64}"><figcaption>Porosidade · caixas vermelhas</figcaption></figure>
+      <figure><img alt="Tons dourados, alaranjados e azulados destacados como indicador visual" src="data:image/png;base64,${response.overlay_termica_base64}"><figcaption>Indicador visual de cor · regiões alaranjadas</figcaption></figure></div>
+      <p>${escapeHtml(porosity.resultado)} ${escapeHtml(heat.resultado)}</p>`;
   } catch (error) {
     showError(imageResult, error);
   } finally {

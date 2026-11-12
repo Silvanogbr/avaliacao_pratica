@@ -126,19 +126,71 @@ async def inspect_image(file: UploadFile = File(...)):
         raise HTTPException(400, "O arquivo nao pode ser lido como imagem.")
 
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    smooth = cv2.GaussianBlur(gray, (5, 5), 0)
-    mask = cv2.adaptiveThreshold(
-        smooth, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
-        cv2.THRESH_BINARY_INV, 31, 7
+
+    # Candidatos escuros e aproximadamente arredondados, compatíveis com poros.
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (13, 13))
+    dark_spots = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, kernel)
+    _, porosity_mask = cv2.threshold(
+        dark_spots, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
     )
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    candidates = [contour for contour in contours if 5 <= cv2.contourArea(contour) <= 1500]
-    overlay = image.copy()
-    cv2.drawContours(overlay, candidates, -1, (0, 0, 255), 2)
-    ok, encoded = cv2.imencode(".png", overlay)
-    if not ok:
-        raise HTTPException(500, "Falha ao gerar a visualizacao.")
+    contours, _ = cv2.findContours(
+        porosity_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    scale = (image.shape[0] * image.shape[1]) / (960 * 640)
+    candidates = []
+    for contour in contours:
+        area = cv2.contourArea(contour)
+        perimeter = cv2.arcLength(contour, True)
+        if perimeter == 0 or not max(5, 8 * scale) <= area <= max(100, 700 * scale):
+            continue
+        circularity = 4 * np.pi * area / (perimeter * perimeter)
+        x, y, width, height = cv2.boundingRect(contour)
+        aspect = width / max(height, 1)
+        if circularity < 0.20 or not 0.30 < aspect < 3.0:
+            continue
+        candidates.append({
+            "x": int(x), "y": int(y), "largura": int(width),
+            "altura": int(height), "area_px": round(float(area), 1),
+            "circularidade": round(float(circularity), 2),
+        })
+
+    porosity_overlay = image.copy()
+    for region in candidates:
+        x, y = region["x"], region["y"]
+        width, height = region["largura"], region["altura"]
+        cv2.rectangle(porosity_overlay, (x, y), (x + width, y + height), (0, 0, 255), 2)
+
+    # Coloração de calor é somente um sinal visual relativo em foto RGB.
+    # Uma foto comum não fornece temperatura calibrada nem mapa radiométrico.
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hue, saturation, value = cv2.split(hsv)
+    warm_colors = ((hue <= 35) | (hue >= 170)) & (saturation >= 70) & (value >= 80)
+    cool_heat_tint = (hue >= 85) & (hue <= 140) & (saturation >= 70) & (value >= 60)
+    heat_mask = np.where(warm_colors | cool_heat_tint, 255, 0).astype(np.uint8)
+    heat_mask = cv2.morphologyEx(
+        heat_mask, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8)
+    )
+    heat_mask = cv2.morphologyEx(
+        heat_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8)
+    )
+    heat_overlay = image.copy()
+    tint = np.zeros_like(image)
+    tint[:] = (0, 150, 255)
+    colored = cv2.addWeighted(image, 0.48, tint, 0.52, 0)
+    heat_overlay[heat_mask > 0] = colored[heat_mask > 0]
+    heat_contours, _ = cv2.findContours(
+        heat_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+    )
+    heat_regions = [c for c in heat_contours if cv2.contourArea(c) >= max(20, 80 * scale)]
+    cv2.drawContours(heat_overlay, heat_regions, -1, (0, 235, 255), 2)
+
+    def encode_image(overlay):
+        ok, encoded = cv2.imencode(".png", overlay)
+        if not ok:
+            raise HTTPException(500, "Falha ao gerar a visualizacao.")
+        return base64.b64encode(encoded.tobytes()).decode("ascii")
+
+    heat_area_pct = 100 * cv2.countNonZero(heat_mask) / heat_mask.size
 
     return {
         "nome_arquivo": file.filename,
@@ -147,10 +199,19 @@ async def inspect_image(file: UploadFile = File(...)):
             "altura": int(image.shape[0]),
             "brilho_medio": round(float(gray.mean()), 2),
             "contraste": round(float(gray.std()), 2),
-            "regioes_candidatas_heuristicas": len(candidates),
-            "resultado": "Exploratorio; nao e uma classificacao treinada.",
         },
-        "overlay_base64": base64.b64encode(encoded.tobytes()).decode("ascii"),
+        "porosidade": {
+            "candidatos_visuais": len(candidates),
+            "regioes": candidates[:200],
+            "resultado": "Candidatos visuais; confirme por inspeção humana.",
+        },
+        "termica_visual": {
+            "regioes_coloridas": len(heat_regions),
+            "area_colorida_pct": round(float(heat_area_pct), 2),
+            "resultado": "Indicador visual de cor; não mede temperatura nem confirma HAZ.",
+        },
+        "overlay_porosidade_base64": encode_image(porosity_overlay),
+        "overlay_termica_base64": encode_image(heat_overlay),
     }
 
 

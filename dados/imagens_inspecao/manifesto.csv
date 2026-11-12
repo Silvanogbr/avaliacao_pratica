@@ -1,5 +1,3 @@
 arquivo,timestamp,lote_id,estacao,classe,anotacao,temperatura_referencia_c,revisor
-teste_solda_sem_defeito.png,2026-11-12T10:01:00-03:00,SINTETICO_001,CAMERA_TESTE,sem_defeito,Cordão sintético regular; imagem criada para teste visual.,,SINTETICO
-teste_solda_porosidade.png,2026-11-12T10:02:00-03:00,SINTETICO_002,CAMERA_TESTE,porosidade,Cavidades escuras desenhadas no cordão sintético; não representa inspeção real.,,SINTETICO
-teste_solda_descontinuidade.png,2026-11-12T10:03:00-03:00,SINTETICO_003,CAMERA_TESTE,outro,Marca linear sintética para testar contraste e contornos.,,SINTETICO
-teste_solda_respingos.png,2026-11-12T10:04:00-03:00,SINTETICO_004,CAMERA_TESTE,outro,Respingos sintéticos ao redor do cordão; imagem criada para teste visual.,,SINTETICO
+images.jpg,,,,,Arquivo presente para teste visual; metadados e classe aguardam revisão.,,
+images (1).jpg,,,,,Arquivo presente para teste visual; metadados e classe aguardam revisão.,,

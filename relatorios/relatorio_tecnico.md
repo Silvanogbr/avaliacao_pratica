@@ -1,5 +1,19 @@
 # Relatório técnico: análise de dados industriais e IA
 
+## Sumário
+
+1. [Objetivo](#1-objetivo)
+2. [Dados e pipeline](#2-dados-e-pipeline)
+3. [Indicadores e OEE](#3-indicadores-e-oee)
+4. [Auditoria dos valores zero](#4-auditoria-dos-valores-zero)
+5. [Distribuição das falhas](#5-distribuicao-das-falhas)
+6. [Correlações com OEE](#6-correlacoes-com-oee)
+7. [Modelos e resultados](#7-modelos-e-resultados)
+8. [Visão computacional: proposta para porosidade e HAZ](#8-visao-computacional-proposta-para-porosidade-e-haz)
+9. [API assíncrona e simulação operacional](#9-api-assincrona-e-simulacao-operacional)
+10. [Ética, impacto social e segurança](#10-etica-impacto-social-e-seguranca)
+11. [Arquivos de código](#11-arquivos-de-codigo)
+
 ## 1. Objetivo
 
 Este trabalho organiza os dados de soldagem para apoiar o monitoramento de qualidade, eficiência e falhas. O classificador e o detector produzem alertas para revisão humana; não comandam a linha de produção.
@@ -25,7 +39,7 @@ Pipeline adotado:
 3. Separação temporal: 80% iniciais para treino e 20% finais para teste.
 4. Classificação multiclasse com Random Forest e pesos balanceados.
 5. Detecção de anomalias com Isolation Forest treinado nos registros normais.
-6. Inferência consultiva, registro e confirmação do operador.
+6. Inferência consultiva e simulação de recomendações para revisão humana. A aplicação não grava a confirmação do operador.
 
 As features dos modelos são temperatura da solda, corrente, tensão, pressão do gás, vibração, velocidade da linha, indicador numérico de porosidade e temperatura máxima HAZ. OEE, contagens de produção e defeitos ficam fora das features porque são resultados do processo. `area_porosidade_px` é um sinal tabular; não substitui as imagens de inspeção.
 
@@ -139,7 +153,7 @@ O Isolation Forest foi ajustado com exemplos normais do treino. O limite inicial
 
 ## 8. Visão computacional: proposta para porosidade e HAZ
 
-Não foram fornecidas imagens de inspeção neste projeto. Portanto, não é possível treinar ou medir um modelo visual agora.
+Há dois arquivos JPG em `../dados/imagens_inspecao/` para testar o envio e a visualização. Eles não têm classe revisada nem metadados de captura confirmados no manifesto; por isso, não são base para treino ou avaliação formal. Também não há imagem térmica radiométrica ou calibração de câmera no projeto.
 
 ### Dados necessários
 
@@ -148,7 +162,7 @@ Não foram fornecidas imagens de inspeção neste projeto. Portanto, não é pos
 - Para análise HAZ, imagem térmica calibrada, temperatura de referência e condições de captura.
 - Separação de treino e teste por lote, evitando que imagens do mesmo lote apareçam nos dois conjuntos.
 
-O script `../scripts/visao_computacional.py` prepara e valida `../dados/imagens_inspecao/manifesto.csv`. As classes sugeridas são `sem_defeito`, `porosidade`, `desvio_termico_haz` e `outro`; a engenharia/qualidade deve definir limites térmicos e severidade antes da coleta. A proposta é iniciar com classificação e usar segmentação quando for necessário localizar o defeito. Avaliar precisão, recall, F1 e falsos negativos por classe, câmera e turno. Iniciar em modo sombra e encaminhar baixa confiança para inspeção humana.
+O script `../scripts/visao_computacional.py` prepara e verifica `../dados/imagens_inspecao/manifesto.csv`, incluindo a existência dos arquivos listados. As classes sugeridas são `sem_defeito`, `porosidade`, `desvio_termico_haz` e `outro`; a engenharia/qualidade deve definir limites térmicos e severidade antes da coleta. A proposta é iniciar com classificação e usar segmentação quando for necessário localizar o defeito. Avaliar precisão, recall, F1 e falsos negativos por classe, câmera e turno. Iniciar em modo sombra e encaminhar baixa confiança para inspeção humana.
 
 ### Guia de interpretação dos rótulos
 
@@ -157,18 +171,22 @@ O script `../scripts/visao_computacional.py` prepara e valida `../dados/imagens_
 - `desvio_termico_haz`: medição térmica excede ou não atende ao critério definido pela engenharia; registrar a temperatura de referência e o critério usado.
 - `outro`: defeito diferente ou imagem inconclusiva; descrever na anotação e encaminhar para revisão.
 
-Manter uma imagem por inspeção/frame, identificador de lote e estação/câmera. Revisar divergências entre inspetores e separar treino/teste por lote. Nenhuma amostra visual foi inventada ou incluída: os arquivos reais continuam pendentes de recebimento.
+Manter uma imagem por inspeção/frame, identificador de lote e estação/câmera. Revisar divergências entre inspetores e separar treino/teste por lote. As duas imagens atuais estão registradas no manifesto com os campos desconhecidos em branco e sem rótulo validado. É necessário completar e revisar esses dados antes de usá-las em treino ou avaliação.
+
+Na aplicação, `POST /api/visao` recebe uma foto RGB (até 10 MB) e executa heurísticas exploratórias do OpenCV: marca regiões escuras e aproximadamente arredondadas como candidatas a porosidade e destaca tons dourados, alaranjados ou azulados. O resultado inclui contagens, regiões candidatas e imagens sobrepostas. Isso não é um classificador treinado e pode gerar falsos positivos. A análise de cor em foto RGB não mede temperatura nem confirma HAZ; a análise térmica em °C depende de imagem radiométrica calibrada, que ainda não está disponível.
 
 ## 9. API assíncrona e simulação operacional
 
-O contrato de exemplo está em `../scripts/api_inferencia.py`.
+`../scripts/api.py` contém a validação simples do payload (`validar_payload`) e a lista das oito features tabulares. Ele aceita `tipo="tabular"` ou `tipo="imagem"`; para imagem, valida a presença de `imagem_uri`. Esse validador não hospeda rotas HTTP. A aplicação HTTP está em `../scripts/app_web.py` e usa upload de arquivo para a análise visual.
 
 | Método e endpoint | Uso | Resposta principal |
 |---|---|---|
-| `POST /v1/inferencias` | Envia dados tabulares ou URI de imagem | `202 Accepted`, ID e estado `processando` |
-| `GET /v1/inferencias/{id}` | Consulta a inferência | Estado, classe, confiança, versão do modelo e necessidade de revisão |
+| `GET /health` | Verifica o serviço e a disponibilidade dos modelos | Estado e `modelos_carregados` |
+| `POST /api/inferencias` | Envia JSON de inferência tabular | `202 Accepted`, ID e estado inicial `processando` |
+| `GET /api/inferencias/{job_id}` | Consulta uma inferência pelo ID | Estado, classe, confiança, anomalia, ação sugerida e revisão humana |
+| `POST /api/visao` | Envia imagem no campo multipart `file` | Métricas visuais, regiões candidatas e duas sobreposições em Base64 |
 
-Erros previstos: `400` para entrada inválida, `401` para cliente não autenticado e `404` para ID inexistente. A entrada tabular inclui timestamp, lote e as oito features do classificador; para imagens, inclui URI e metadados. O exemplo completo está como constante `EXEMPLO_ENTRADA` no script. O script valida o payload; a hospedagem HTTP, autenticação e fila de trabalhos são especificações de integração, não serviços implantados neste projeto.
+Na inferência tabular, o JSON precisa conter `tipo="tabular"`, timestamp ISO-8601, `lote_id` e as oito features numéricas em `dados`. A resposta inicial contém `id` e `status`; a consulta posterior contém também classe, confiança, escore de anomalia, ação sugerida e `revisao_humana`. Os resultados ficam em memória no processo e não incluem versão do modelo. A aplicação não implementa autenticação nem persistência de decisões do operador. Erros observáveis incluem `400` para payload/tipo inválidos, `503` quando os modelos não estão disponíveis, `404` para ID inexistente, `413` para arquivo acima de 10 MB e `400` para arquivo que não pode ser lido como imagem.
 
 Exemplo de entrada tabular:
 
@@ -191,13 +209,13 @@ Exemplo de entrada tabular:
 }
 ```
 
-Resposta imediata: `{"id":"inf_123","status":"processando"}`. Consulta concluída: `{"id":"inf_123","status":"concluida","classe":"Porosidade na Solda","confianca":0.82,"revisao_humana":true,"versao_modelo":"1.0.0"}`.
+Resposta imediata: `{"id":"<uuid>","status":"processando"}`. A consulta concluída inclui `classe`, `confianca`, `anomalia`, `escore_anomalia`, `acao_sugerida`, `revisao_humana` e `lote_id`; os valores dependem da inferência executada.
 
-O `../scripts/simulacao_operacao.py` percorre registros recentes, carrega o modelo salvo e recomenda monitoramento ou inspeção. O ciclo é **sinais/imagem → inferência → alerta → confirmação do operador → registro da decisão**. A simulação não envia comandos ao equipamento. Dados inválidos, baixa confiança ou indisponibilidade devem seguir o procedimento manual, mantendo alarmes e intertravamentos existentes.
+O `../scripts/simulacao_operacao.py` percorre os cinco registros mais recentes, carrega o classificador salvo e imprime classe, confiança e ação sugerida. O ciclo operacional proposto é **sinais/imagem → inferência → alerta → confirmação do operador → registro da decisão**; no código atual, a simulação não grava essa confirmação, não implementa a etapa de imagem e não envia comandos ao equipamento. Dados inválidos, baixa confiança ou indisponibilidade devem seguir o procedimento manual, mantendo alarmes e intertravamentos existentes.
 
 ### Aplicação web de teste
 
-O `../scripts/app_web.py` fornece uma interface local em `http://127.0.0.1:8000` para testar o envio de dados tabulares e consultar o resultado assíncrono por ID. A rota `/docs` expõe a documentação interativa dos endpoints. A tela de imagem recebe um arquivo, mostra a imagem original e uma máscara exploratória baseada em contraste/threshold do OpenCV. Essa heurística serve para testar o fluxo de upload e visualização; não é um modelo treinado nem confirma defeitos. O endpoint limita o upload a 10 MB. A parte HAZ exige câmera térmica calibrada e não estima temperatura a partir de uma imagem RGB.
+O `../scripts/app_web.py` fornece a interface local em `http://127.0.0.1:8000`; a rota `/docs` expõe a documentação interativa dos endpoints. A inferência tabular é assíncrona no processo da aplicação. A inspeção visual marca candidatos a porosidade e regiões por cor na foto enviada, mas é exploratória: não confirma defeitos e não calcula temperatura HAZ a partir de RGB.
 
 ## 10. Ética, impacto social e segurança
 
@@ -213,7 +231,7 @@ O `../scripts/app_web.py` fornece uma interface local em `http://127.0.0.1:8000`
 - `relatorio_tecnico.md`: este relatório.
 - `../scripts/modelagem.py`: treino, avaliação e gravação dos modelos em `../modelos/`.
 - `../scripts/visao_computacional.py`: preparação e validação do manifesto de imagens.
-- `../scripts/api_inferencia.py`: contrato e exemplo de payload.
+- `../scripts/api.py`: features e validação simples do payload de exemplo.
 - `../scripts/simulacao_operacao.py`: inferência e simulação consultiva.
 - `../scripts/app_web.py`: interface local para testar a API tabular e o fluxo visual.
 

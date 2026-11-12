@@ -73,7 +73,7 @@ O notebook conta os zeros por coluna antes de qualquer substituição. Neste dat
 
 O script de visão cria `dados/imagens_inspecao/manifesto.csv`. Adicione imagens de inspeção reais nessa pasta e preencha o manifesto com `arquivo`, `timestamp`, `lote_id`, `estacao`, `classe`, `anotacao`, `temperatura_referencia_c` e `revisor`. A tela web usa uma heurística de contraste do OpenCV, não um classificador treinado. O treinamento e a avaliação visual dependem da inclusão de imagens reais e rótulos revisados.
 
-Para testar o fluxo de upload, `dados/imagens_inspecao/` contém quatro imagens sintéticas (`teste_solda_*.png`) e seus registros no manifesto. Elas ilustram um cordão regular, porosidade, uma descontinuidade e respingos. Use a aba **Inspeção de imagem** da aplicação para enviar os arquivos. São exemplos artificiais para validar a interface e a visualização exploratória; não são dados reais nem devem ser usados para treinar ou avaliar um modelo.
+Use a aba **Inspeção de imagem** para enviar uma foto. A API marca cavidades escuras e arredondadas como candidatos a porosidade e destaca regiões douradas, alaranjadas ou azuladas. São heurísticas exploratórias, não um classificador treinado: revise os candidatos manualmente. Em fotos RGB, as cores são apenas um indicador visual e não medem temperatura nem confirmam a zona HAZ; uma análise térmica em °C requer imagem radiométrica e calibração da câmera.
 
 ## Uso operacional
 

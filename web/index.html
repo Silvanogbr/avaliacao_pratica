@@ -56,11 +56,11 @@
       </section>
 
       <section class="panel" id="image-panel" hidden>
-        <div class="panel-heading"><div><p class="eyebrow">ANÁLISE EXPLORATÓRIA</p><h2>Inspeção visual</h2></div><span class="tag">Até 10 MB</span></div>
-        <p class="panel-copy">Envie uma imagem para gerar uma visualização de regiões candidatas por contraste. Esta heurística não é um classificador treinado.</p>
+        <div class="panel-heading"><div><p class="eyebrow">ANÁLISE EXPLORATÓRIA</p><h2>Porosidade e marcas visuais de calor</h2></div><span class="tag">Até 10 MB</span></div>
+        <p class="panel-copy">Envie uma foto da solda. O sistema marca cavidades escuras arredondadas como candidatos a porosidade e destaca tons dourados, alaranjados ou azulados. Em foto comum, isso não mede temperatura em °C nem confirma a zona HAZ; para isso é necessária uma câmera térmica radiométrica.</p>
         <form id="image-form">
           <label class="upload-zone" for="image-file"><span class="upload-icon">↑</span><strong id="file-label">Escolha uma imagem</strong><span>PNG, JPG ou outro formato de imagem</span><input id="image-file" name="file" type="file" accept="image/*" required></label>
-          <button class="button button-primary" type="submit">Analisar imagem <span aria-hidden="true">↗</span></button>
+          <button class="button button-primary" type="submit"><span>Analisar foto</span><span aria-hidden="true">↗</span></button>
         </form>
         <div class="result" id="image-result" aria-live="polite" hidden></div>
       </section>
