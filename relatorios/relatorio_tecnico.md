@@ -2,18 +2,19 @@
 
 ## Sumário
 
-1. [Objetivo](#1-objetivo)
-2. [Dados e pipeline](#2-dados-e-pipeline)
-3. [Indicadores e OEE](#3-indicadores-e-oee)
-4. [Auditoria dos valores zero](#4-auditoria-dos-valores-zero)
-5. [Distribuição das falhas](#5-distribuicao-das-falhas)
-6. [Correlações com OEE](#6-correlacoes-com-oee)
-7. [Modelos e resultados](#7-modelos-e-resultados)
-8. [Visão computacional: proposta para porosidade e HAZ](#8-visao-computacional-proposta-para-porosidade-e-haz)
-9. [API assíncrona e simulação operacional](#9-api-assincrona-e-simulacao-operacional)
-10. [Ética, impacto social e segurança](#10-etica-impacto-social-e-seguranca)
-11. [Arquivos de código](#11-arquivos-de-codigo)
+1. [Objetivo](#secao-01)
+2. [Dados e pipeline](#secao-02)
+3. [Indicadores e OEE](#secao-03)
+4. [Auditoria dos valores zero](#secao-04)
+5. [Distribuição das falhas](#secao-05)
+6. [Correlações com OEE](#secao-06)
+7. [Modelos e resultados](#secao-07)
+8. [Visão computacional: proposta para porosidade e HAZ](#secao-08)
+9. [API assíncrona e simulação operacional](#secao-09)
+10. [Ética, impacto social e segurança](#secao-10)
+11. [Arquivos de código](#secao-11)
 
+<a id="secao-01"></a>
 ## 1. Objetivo
 
 Este trabalho organiza os dados de soldagem para apoiar o monitoramento de qualidade, eficiência e falhas. O classificador e o detector produzem alertas para revisão humana; não comandam a linha de produção.
@@ -28,6 +29,7 @@ Este trabalho organiza os dados de soldagem para apoiar o monitoramento de quali
 | C4 — Utilizar visão computacional em sistemas industriais | Proposta de inspeção de porosidade/HAZ, metadados e plano de validação por imagens |
 | C5 — Reconhecer ética e impacto social da IA | Revisão humana, segurança, viés, privacidade, impacto no trabalho e monitoramento |
 
+<a id="secao-02"></a>
 ## 2. Dados e pipeline
 
 O CSV contém **15.000 registros**, **21 colunas**, **150 lotes**, com medições por minuto entre **1 e 11 de outubro de 2026**. Não há valores ausentes nem timestamps repetidos. O notebook `../notebooks/tratamento.ipynb` ordena e limpa os dados, confere qualidade, calcula estatísticas e apresenta gráficos exploratórios. Ele também salva `../dados/dados_tratados.csv` para os scripts.
@@ -69,6 +71,7 @@ As features dos modelos são temperatura da solda, corrente, tensão, pressão d
 | `anomalia_isolamento` | 0/1 | Rótulo binário de anomalia |
 | `classe_falha` | categoria | Rótulo multiclasse da falha |
 
+<a id="secao-03"></a>
 ## 3. Indicadores e OEE
 
 O OEE é calculado por:
@@ -86,6 +89,7 @@ OEE (%) = disponibilidade (%) × desempenho (%) × qualidade (%) / 10.000
 | Peças defeituosas | 13.582 |
 | Taxa de defeito | 3,91% |
 
+<a id="secao-04"></a>
 ## 4. Auditoria dos valores zero
 
 Os zeros foram auditados por coluna antes do tratamento. **Não foram convertidos automaticamente em valores ausentes**, pois a maior parte representa resultados válidos:
@@ -101,6 +105,7 @@ Os zeros foram auditados por coluna antes do tratamento. **Não foram convertido
 
 Não existem zeros nas leituras físicas de temperatura, corrente, tensão, pressão, vibração ou velocidade. Substituir os zeros listados por média/mediana apagaria informação de parada, qualidade e rótulo. Se o professor tinha em mente um campo específico, a regra de substituição deve ser aplicada apenas a esse campo após confirmar que zero significa “leitura ausente” no dicionário de dados.
 
+<a id="secao-05"></a>
 ## 5. Distribuição das falhas
 
 | Classe | Registros | Proporção |
@@ -113,6 +118,7 @@ Não existem zeros nas leituras físicas de temperatura, corrente, tensão, pres
 
 A distribuição é bastante desbalanceada. A acurácia geral, sozinha, pode ocultar falhas raras que o modelo não reconhece.
 
+<a id="secao-06"></a>
 ## 6. Correlações com OEE
 
 | Variável | Correlação |
@@ -131,6 +137,7 @@ A distribuição é bastante desbalanceada. A acurácia geral, sozinha, pode ocu
 
 Neste conjunto, parada, defeitos e porosidade apresentam associação negativa com OEE. Correlação não demonstra causalidade; investigue eventos, lotes e condições do processo antes de propor ajustes.
 
+<a id="secao-07"></a>
 ## 7. Modelos e resultados
 
 ### Classificação multiclasse
@@ -151,6 +158,7 @@ O único caso de sobrecarga no teste não foi detectado. Essa amostra não permi
 
 O Isolation Forest foi ajustado com exemplos normais do treino. O limite inicial usa o percentil 95 dos escores desses exemplos. No teste, ROC AUC = **0,739** e F1 = **0,329**. O limite é exploratório e deve ser calibrado conforme o custo de alarmes falsos e falhas não detectadas.
 
+<a id="secao-08"></a>
 ## 8. Visão computacional: proposta para porosidade e HAZ
 
 Há dois arquivos JPG em `../dados/imagens_inspecao/` para testar o envio e a visualização. Eles não têm classe revisada nem metadados de captura confirmados no manifesto; por isso, não são base para treino ou avaliação formal. Também não há imagem térmica radiométrica ou calibração de câmera no projeto.
@@ -175,6 +183,7 @@ Manter uma imagem por inspeção/frame, identificador de lote e estação/câmer
 
 Na aplicação, `POST /api/visao` recebe uma foto RGB (até 10 MB) e executa heurísticas exploratórias do OpenCV: marca regiões escuras e aproximadamente arredondadas como candidatas a porosidade e destaca tons dourados, alaranjados ou azulados. O resultado inclui contagens, regiões candidatas e imagens sobrepostas. Isso não é um classificador treinado e pode gerar falsos positivos. A análise de cor em foto RGB não mede temperatura nem confirma HAZ; a análise térmica em °C depende de imagem radiométrica calibrada, que ainda não está disponível.
 
+<a id="secao-09"></a>
 ## 9. API assíncrona e simulação operacional
 
 `../scripts/api.py` contém a validação simples do payload (`validar_payload`) e a lista das oito features tabulares. Ele aceita `tipo="tabular"` ou `tipo="imagem"`; para imagem, valida a presença de `imagem_uri`. Esse validador não hospeda rotas HTTP. A aplicação HTTP está em `../scripts/app_web.py` e usa upload de arquivo para a análise visual.
@@ -217,6 +226,7 @@ O `../scripts/simulacao_operacao.py` percorre os cinco registros mais recentes, 
 
 O `../scripts/app_web.py` fornece a interface local em `http://127.0.0.1:8000`; a rota `/docs` expõe a documentação interativa dos endpoints. A inferência tabular é assíncrona no processo da aplicação. A inspeção visual marca candidatos a porosidade e regiões por cor na foto enviada, mas é exploratória: não confirma defeitos e não calcula temperatura HAZ a partir de RGB.
 
+<a id="secao-10"></a>
 ## 10. Ética, impacto social e segurança
 
 - A IA apoia a inspeção e não substitui operadores, intertravamentos ou procedimentos de segurança.
@@ -225,6 +235,7 @@ O `../scripts/app_web.py` fornece a interface local em `http://127.0.0.1:8000`; 
 - Limitar acesso e retenção das imagens ao necessário; evitar dados pessoais sem justificativa.
 - Envolver operação e manutenção no desenho e na revisão, monitorar deriva e incidentes e oferecer retorno seguro ao processo manual.
 
+<a id="secao-11"></a>
 ## 11. Arquivos de código
 
 - `../notebooks/tratamento.ipynb`: tratamento e análise exploratória com gráficos.
