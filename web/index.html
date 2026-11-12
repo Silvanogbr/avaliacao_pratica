@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f6f2">
+    <title>Inspeção industrial | Painel de testes</title>
+    <link rel="stylesheet" href="/assets/styles.css">
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="Painel de inspeção industrial">
+        <span class="brand-mark" aria-hidden="true">◎</span>
+        <span>oficina<span class="brand-light">.lab</span></span>
+      </a>
+      <div class="connection"><span class="status-dot" id="health-dot"></span><span id="health-text">Verificando API…</span></div>
+    </header>
+
+    <main class="shell">
+      <section class="intro">
+        <p class="eyebrow">AMBIENTE DE DESENVOLVIMENTO <span>•</span> VERSÃO DE TESTE</p>
+        <h1>Inspeção de processo</h1>
+        <p class="intro-copy">Envie medições para a API e acompanhe a recomendação do modelo. Cada resultado precisa de revisão humana.</p>
+      </section>
+
+      <nav class="tabs" aria-label="Tipo de teste">
+        <button class="tab is-active" type="button" data-panel="tabular-panel" aria-selected="true">Medições do processo</button>
+        <button class="tab" type="button" data-panel="image-panel" aria-selected="false">Inspeção de imagem</button>
+      </nav>
+
+      <section class="panel is-visible" id="tabular-panel">
+        <div class="panel-heading">
+          <div><p class="eyebrow">INFERÊNCIA TABULAR</p><h2>Dados da soldagem</h2></div>
+          <span class="tag">8 variáveis</span>
+        </div>
+        <form id="inference-form">
+          <div class="meta-fields">
+            <label class="field"><span>ID do lote</span><input name="lote_id" value="LOTE_TESTE_001" required maxlength="80"></label>
+            <label class="field"><span>Data e hora</span><input name="timestamp" id="timestamp" type="datetime-local" required></label>
+          </div>
+          <div class="section-label"><span>Parâmetros de processo</span><span>Informe valores numéricos</span></div>
+          <div class="field-grid">
+            <label class="field"><span>Temperatura da solda</span><span class="input-unit"><input name="temperatura_solda_c" type="number" step="any" value="216.8" required><i>°C</i></span></label>
+            <label class="field"><span>Corrente da solda</span><span class="input-unit"><input name="corrente_solda_a" type="number" step="any" value="160.2" required><i>A</i></span></label>
+            <label class="field"><span>Tensão da solda</span><span class="input-unit"><input name="tensao_solda_v" type="number" step="any" value="23.7" required><i>V</i></span></label>
+            <label class="field"><span>Pressão do gás</span><span class="input-unit"><input name="pressao_gas_bar" type="number" step="any" value="4.5" required><i>bar</i></span></label>
+            <label class="field"><span>Vibração</span><span class="input-unit"><input name="vibracao_mm_s" type="number" step="any" value="1.2" required><i>mm/s</i></span></label>
+            <label class="field"><span>Velocidade da linha</span><span class="input-unit"><input name="velocidade_linha_m_min" type="number" step="any" value="12" required><i>m/min</i></span></label>
+            <label class="field"><span>Área de porosidade</span><span class="input-unit"><input name="area_porosidade_px" type="number" step="any" value="7.6" required><i>px</i></span></label>
+            <label class="field"><span>Temperatura máxima HAZ</span><span class="input-unit"><input name="temperatura_max_haz_c" type="number" step="any" value="227.7" required><i>°C</i></span></label>
+          </div>
+          <div class="form-footer"><p>Resultado demonstrativo. Não controla equipamentos.</p><button class="button button-primary" type="submit"><span>Enviar para análise</span><span aria-hidden="true">↗</span></button></div>
+        </form>
+        <div class="result" id="inference-result" aria-live="polite" hidden></div>
+      </section>
+
+      <section class="panel" id="image-panel" hidden>
+        <div class="panel-heading"><div><p class="eyebrow">ANÁLISE EXPLORATÓRIA</p><h2>Inspeção visual</h2></div><span class="tag">Até 10 MB</span></div>
+        <p class="panel-copy">Envie uma imagem para gerar uma visualização de regiões candidatas por contraste. Esta heurística não é um classificador treinado.</p>
+        <form id="image-form">
+          <label class="upload-zone" for="image-file"><span class="upload-icon">↑</span><strong id="file-label">Escolha uma imagem</strong><span>PNG, JPG ou outro formato de imagem</span><input id="image-file" name="file" type="file" accept="image/*" required></label>
+          <button class="button button-primary" type="submit">Analisar imagem <span aria-hidden="true">↗</span></button>
+        </form>
+        <div class="result" id="image-result" aria-live="polite" hidden></div>
+      </section>
+      <footer><span>Protótipo local para validação de integração</span><a href="/docs" target="_blank" rel="noreferrer">Documentação da API ↗</a></footer>
+    </main>
+  </body>
+</html>

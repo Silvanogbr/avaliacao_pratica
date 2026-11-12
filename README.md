@@ -51,7 +51,7 @@ python -m pip install pandas numpy matplotlib scikit-learn joblib jupyter fastap
 4. Verifique payload e manifesto:
 
    ```bash
-   python scripts/api_inferencia.py
+   python scripts/api.py
    python scripts/visao_computacional.py
    ```
 
@@ -71,7 +71,9 @@ O notebook conta os zeros por coluna antes de qualquer substituição. Neste dat
 
 ## Imagens de inspeção
 
-Ainda não há imagens no projeto. O script de visão cria `dados/imagens_inspecao/manifesto.csv`. Adicione as imagens nessa pasta e preencha o manifesto com `arquivo`, `timestamp`, `lote_id`, `estacao`, `classe`, `anotacao`, `temperatura_referencia_c` e `revisor`. A tela web usa uma heurística de contraste do OpenCV, não um classificador treinado. O treinamento e a avaliação visual dependem da inclusão de imagens e rótulos revisados.
+O script de visão cria `dados/imagens_inspecao/manifesto.csv`. Adicione imagens de inspeção reais nessa pasta e preencha o manifesto com `arquivo`, `timestamp`, `lote_id`, `estacao`, `classe`, `anotacao`, `temperatura_referencia_c` e `revisor`. A tela web usa uma heurística de contraste do OpenCV, não um classificador treinado. O treinamento e a avaliação visual dependem da inclusão de imagens reais e rótulos revisados.
+
+Para testar o fluxo de upload, `dados/imagens_inspecao/` contém quatro imagens sintéticas (`teste_solda_*.png`) e seus registros no manifesto. Elas ilustram um cordão regular, porosidade, uma descontinuidade e respingos. Use a aba **Inspeção de imagem** da aplicação para enviar os arquivos. São exemplos artificiais para validar a interface e a visualização exploratória; não são dados reais nem devem ser usados para treinar ou avaliar um modelo.
 
 ## Uso operacional
 
